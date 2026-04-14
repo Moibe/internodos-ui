@@ -196,6 +196,41 @@
 		}
 	}
 
+	// Export / Import workflow
+	function exportWorkflow() {
+		const data = { boxes, connections, nextId };
+		const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'workflow.json';
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function importWorkflow() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json';
+		input.onchange = () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = () => {
+				try {
+					const data = JSON.parse(reader.result as string);
+					boxes = data.boxes ?? [];
+					connections = data.connections ?? [];
+					nextId = data.nextId ?? 1;
+				} catch {
+					console.error('JSON inválido');
+				}
+			};
+			reader.readAsText(file);
+		};
+		input.click();
+	}
+
 	// Derived paths
 	let connectionPaths = $derived.by(() => {
 		return connections.map((conn) => {
@@ -215,7 +250,12 @@
 	});
 </script>
 
-<button class="btn-create" onclick={createBox}>Crear</button>
+<div class="toolbar">
+	<button class="btn-create" onclick={createBox}>Crear</button>
+	<div class="toolbar-spacer"></div>
+	<button class="btn-io" onclick={exportWorkflow} title="Exportar workflow">⬇ Exportar</button>
+	<button class="btn-io" onclick={importWorkflow} title="Importar workflow">⬆ Importar</button>
+</div>
 
 <div
 	class="workspace"
@@ -278,10 +318,22 @@
 {/if}
 
 <style>
-	.btn-create {
+	.toolbar {
 		position: absolute;
 		top: 1.2%;
 		left: 1.2%;
+		right: 1.2%;
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		z-index: 20;
+	}
+
+	.toolbar-spacer {
+		flex: 1;
+	}
+
+	.btn-create {
 		padding: 8px 22px;
 		background: rgba(255, 255, 255, 0.12);
 		color: white;
@@ -292,7 +344,25 @@
 		cursor: pointer;
 		backdrop-filter: blur(8px);
 		transition: background 0.2s, border-color 0.2s;
-		z-index: 20;
+	}
+
+	.btn-io {
+		padding: 6px 14px;
+		background: rgba(255, 255, 255, 0.08);
+		color: rgba(255, 255, 255, 0.7);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 6px;
+		font-size: 12px;
+		font-weight: 500;
+		cursor: pointer;
+		backdrop-filter: blur(8px);
+		transition: background 0.2s, color 0.2s;
+		white-space: nowrap;
+	}
+
+	.btn-io:hover {
+		background: rgba(255, 255, 255, 0.18);
+		color: white;
 	}
 
 	.btn-create:hover {
